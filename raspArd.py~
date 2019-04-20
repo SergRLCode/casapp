@@ -5,25 +5,22 @@ import redis
 
 redis = redis.Redis(host='localhost', port=6379)
 server = Flask(__name__)
-arduino = serial.Serial("/dev/ttyACM0", 9600)
+arduino = serial.Serial("/dev/ttyACM1", 9600)
 t.sleep(1)
 
 spotlightData = {
-	"status": "",
+	"status": "off",
 	"hourStart": "",
 	"hourEnd": "",
 	"timeElapsed": ""
 }
-
-def strTodate(theDate):
-	return dt.strptime(theDate, '%Y-%m-%d %H:%M:%S.%f')
 
 def getTotalTimeSwitchedOn(spotlight):
     # hours, minutes, seconds = "", "", "" <- in case when all the variables will contain diferent value
     hours = minutes = seconds = ""
     _spotlight = redis.hgetall(spotlight)
     _spotlight = {key.decode('utf-8'): value.decode('utf-8') for (key, value) in _spotlight.items()}
-    timeElapsed = (strTodate(_spotlight['hourEnd'])-strTodate(_spotlight['hourStart'])).seconds
+    timeElapsed = (dt.strptime(_spotlight['hourEnd'], '%Y-%m-%d %H:%M:%S.%f')-dt.strptime(_spotlight['hourStart'], '%Y-%m-%d %H:%M:%S.%f')).seconds
     hours = int(timeElapsed/3600)
     minutes = int((timeElapsed%3600)/60)
     seconds = (timeElapsed%3600)%60
@@ -49,8 +46,8 @@ def spotlight_route(room):
         		redis.hmset(room, spotlightData)
         		instruction = "{}_{}".format(room, data["status"])
         		arduino.write(instruction.encode('utf-8'))
-        return jsonify(data, redis.hget(room, 'timeElapsed').decode('utf-8'))
+        return jsonify(data)
 
 if __name__ == '__main__':
-    server.run(debug=True, host='192.168.1.67', port=5000)
+    server.run(debug=True, host='192.168.1.67', port=5001)
     arduino.close()
