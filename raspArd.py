@@ -44,7 +44,7 @@ def spotlight_route(room):
         	spotlightData['status'] = 'on'
         	spotlightData['hourStart'] = '{}'.format(dt.now())
         	redis.hmset(room, spotlightData)
-        	# instruction = "{}_{}".format(room, data["status"])
+        	instruction = "{}_{}".format(room, data["status"])
         	# arduino.write(instruction.encode('utf-8'))
         elif data["status"] == "off":
         	spotlightData['status'] = 'off'
@@ -52,7 +52,7 @@ def spotlight_route(room):
         	redis.hmset(room, spotlightData)
         	spotlightData['timeElapsed'] = getTotalTimeSwitchedOn(room)
         	redis.hmset(room, spotlightData)
-        	# instruction = "{}_{}".format(room, data["status"])
+        	instruction = "{}_{}".format(room, data["status"])
         	# arduino.write(instruction.encode('utf-8'))
         return jsonify(data, redis.hget(room, 'timeElapsed').decode('utf-8'))
 
@@ -75,6 +75,12 @@ def add_update():
 			userData[value] = data[value] if value!='password' else sha256.hash(data[value])
 		redis.hmset(data['username'], userData)
 		return jsonify({'message': 'Saved!'})
+
+@server.route('/deleteUser/<name>', methods=['DELETE'])
+def delete_user(name):
+	if(request.method == 'DELETE'):
+		redis.delete(name)
+		return jsonify({'message': 'Borrado'})
 
 if __name__ == '__main__':
     server.run(debug=True, port=5000)
