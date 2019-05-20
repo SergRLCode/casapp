@@ -6,7 +6,7 @@ import redis
 
 redis = redis.Redis(host='localhost', port=6379)
 server = Flask(__name__)
-# arduino = serial.Serial("/dev/ttyACM0", 9600)
+arduino = serial.Serial("/dev/ttyACM0", 9600)
 t.sleep(1)
 
 spotlightData = {
@@ -45,7 +45,7 @@ def spotlight_route(room):
         	spotlightData['hourStart'] = '{}'.format(dt.now())
         	redis.hmset(room, spotlightData)
         	instruction = "{}_{}".format(room, data["status"])
-        	# arduino.write(instruction.encode('utf-8'))
+        	arduino.write(instruction.encode('utf-8'))
         elif data["status"] == "off":
         	spotlightData['status'] = 'off'
         	spotlightData['hourEnd'] = '{}'.format(dt.now())
@@ -53,7 +53,7 @@ def spotlight_route(room):
         	spotlightData['timeElapsed'] = getTotalTimeSwitchedOn(room)
         	redis.hmset(room, spotlightData)
         	instruction = "{}_{}".format(room, data["status"])
-        	# arduino.write(instruction.encode('utf-8'))
+        	arduino.write(instruction.encode('utf-8'))
         return jsonify(data, redis.hget(room, 'timeElapsed').decode('utf-8'))
 
 @server.route('/login', methods=['POST'])
@@ -76,12 +76,6 @@ def add_update():
 		redis.hmset(data['username'], userData)
 		return jsonify({'message': 'Saved!'})
 
-@server.route('/deleteUser/<name>', methods=['DELETE'])
-def delete_user(name):
-	if(request.method == 'DELETE'):
-		redis.delete(name)
-		return jsonify({'message': 'Borrado'})
-
 if __name__ == '__main__':
     server.run(debug=True, port=5000)
-    # arduino.close()
+    arduino.close()
