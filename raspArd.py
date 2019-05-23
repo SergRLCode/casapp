@@ -18,8 +18,7 @@ spotlightData = {
 
 userData = {
 	"username": "",
-	"password": "",
-	"usertype": ""
+	"password": ""
 }
 
 def strTodate(theDate):
@@ -54,32 +53,34 @@ def spotlight_route(room):
         	redis.hmset(room, spotlightData)
         	instruction = "{}_{}".format(room, data["status"])
         	# arduino.write(instruction.encode('utf-8'))
-        return jsonify(data, redis.hget(room, 'timeElapsed').decode('utf-8'))
+        return jsonify(data, redis.hget(room, 'timeElapsed').decode('utf-8') if data["status"] == "off" else "")
 
 @server.route('/login', methods=['POST'])
 def login_user():
 	if(request.method == 'POST'):
 		data = request.get_json()
-		user = redis.hgetall(data['userType'])
+		user = redis.hgetall(data['username'])
 		dataDecoded = {key.decode('utf-8'): value.decode('utf-8') for (key, value) in user.items()}
-		if dataDecoded['userType'] == 'admin':
-			spotlights = ['one', 'two', 'three', 'four']
-		else:
-			spotlights = ['one', 'two']
+		spotlights = dataDecoded['spotlights'].replace("'", "")
+		spotlights = spotlights.replace(" ", "").split(',')
+		spotlightsAndStatus = []
+		for val in spotlights:
+			spotlightsAndStatus.append(val)
+			spotlightsAndStatus.append(redis.hget(val, 'status').decode('utf-8'))
 		if sha256.verify(data['password'], dataDecoded['password']):
-			return jsonify({'message': 'Hello {}'.format(data['userType']), 'spotlights': spotlights})
+			return jsonify({'message': 'Hello {}'.format(data['username']), 'spotlightsAndStatus': spotlightsAndStatus}), 200
 		else:
-			return jsonify({'message': 'Wrong access'})
+			return jsonify({'message': 'Wrong access'}), 401
 
 @server.route('/addUpdate', methods=['POST'])
 def add_update():
 	if(request.method == 'POST'):
 		data = request.get_json()
-		if data['userType'] != 'admin' and data['userType'] != 'simple':
-			return jsonify({'message': 'Tipos de usuario invalido'}), 400
-		for value in ('password', 'userType'):
+		spotlights = data['spotlights']
+		data['spotlights'] = str(spotlights).strip('[]')
+		for value in ('password', 'username', 'spotlights'):
 			userData[value] = data[value] if value!='password' else sha256.hash(data[value])
-		redis.hmset(data['userType'], userData)
+		redis.hmset(data['username'], userData)
 		return jsonify({'message': 'Saved!'})
 
 if __name__ == '__main__':
