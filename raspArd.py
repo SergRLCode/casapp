@@ -72,7 +72,7 @@ def login_user():
 			spotlightsAndStatus.append(spotlights[x])
 			spotlightsAndStatus.append(redis.hget(str(x+1), 'status').decode('utf-8'))
 		if sha256.verify(data['password'], dataDecoded['password']):
-			return jsonify({'message': 'Hello {}'.format(data['username']), 'spotlightsAndStatus': spotlightsAndStatus}), 200
+			return jsonify({'message': '{}'.format(data['username']), 'spotlightsAndStatus': spotlightsAndStatus}), 200
 		else:
 			return jsonify({'message': 'Wrong access'}), 401
 
