@@ -25,35 +25,40 @@ def strTodate(theDate):
 	return dt.strptime(theDate, '%Y-%m-%d %H:%M:%S.%f')
 
 def getTotalTimeSwitchedOn(spotlight):
-    # hours, minutes, seconds = "", "", "" <- in case when all the variables will contain diferent value
-    hours = minutes = seconds = ""
-    _spotlight = redis.hgetall(spotlight)
-    _spotlight = {key.decode('utf-8'): value.decode('utf-8') for (key, value) in _spotlight.items()}
-    timeElapsed = (strTodate(_spotlight['hourEnd'])-strTodate(_spotlight['hourStart'])).seconds
-    hours = int(timeElapsed/3600)
-    minutes = int((timeElapsed%3600)/60)
-    seconds = (timeElapsed%3600)%60
-    return("Tiempo encendido: {} horas, {} minutos, {} segundos".format(hours, minutes, seconds))
+	# hours, minutes, seconds = "", "", "" <- in case when all the variables will contain diferent value
+	hours = minutes = seconds = ""
+	_spotlight = redis.hgetall(spotlight)
+	_spotlight = {key.decode('utf-8'): value.decode('utf-8') for (key, value) in _spotlight.items()}
+	timeElapsed = (strTodate(_spotlight['hourEnd'])-strTodate(_spotlight['hourStart'])).seconds
+	hours = int(timeElapsed/3600)
+	minutes = int((timeElapsed%3600)/60)
+	seconds = (timeElapsed%3600)%60
+	return("Tiempo encendido: {} horas, {} minutos, {} segundos".format(hours, minutes, seconds))
 
 @server.route('/spotlight/<room>', methods=['POST'])
 def spotlight_route(room):
-    if (request.method == 'POST'):
-        data = request.get_json()
-        if data["status"] == "on":
-        	spotlightData['status'] = 'on'
-        	spotlightData['hourStart'] = '{}'.format(dt.now())
-        	redis.hmset(room, spotlightData)
-        	instruction = "{}_{}".format(room, data["status"])
-        	# arduino.write(instruction.encode('utf-8'))
-        elif data["status"] == "off":
-        	spotlightData['status'] = 'off'
-        	spotlightData['hourEnd'] = '{}'.format(dt.now())
-        	redis.hmset(room, spotlightData)
-        	spotlightData['timeElapsed'] = getTotalTimeSwitchedOn(room)
-        	redis.hmset(room, spotlightData)
-        	instruction = "{}_{}".format(room, data["status"])
-        	# arduino.write(instruction.encode('utf-8'))
-        return jsonify(data, redis.hget(room, 'timeElapsed').decode('utf-8') if data["status"] == "off" else "")
+	if (request.method == 'POST'):
+		data = request.get_json()
+		params = ('living_room', 'kitchen', 'bathroom', 'bedroom')
+		idents = ('1', '2', '3', '4')
+		for x in range(0,len(params)):
+			if room == params[x]:
+				room = idents[x]
+		if data["status"] == "on":
+			spotlightData['status'] = 'on'
+			spotlightData['hourStart'] = '{}'.format(dt.now())
+			redis.hmset(room, spotlightData)
+			instruction = "{}{}".format(room, data["status"])
+			# arduino.write(instruction.encode('utf-8'))
+		elif data["status"] == "off":
+			spotlightData['status'] = 'off'
+			spotlightData['hourEnd'] = '{}'.format(dt.now())
+			redis.hmset(room, spotlightData)
+			spotlightData['timeElapsed'] = getTotalTimeSwitchedOn(room)
+			redis.hmset(room, spotlightData)
+			instruction = "{}{}".format(room, data["status"])
+			# arduino.write(instruction.encode('utf-8'))
+		return jsonify(data, redis.hget(room, 'timeElapsed').decode('utf-8') if data["status"] == "off" else "")
 
 @server.route('/login', methods=['POST'])
 def login_user():
@@ -61,12 +66,11 @@ def login_user():
 		data = request.get_json()
 		user = redis.hgetall(data['username'])
 		dataDecoded = {key.decode('utf-8'): value.decode('utf-8') for (key, value) in user.items()}
-		spotlights = dataDecoded['spotlights'].replace("'", "")
-		spotlights = spotlights.replace(" ", "").split(',')
+		spotlights = dataDecoded['spotlights'].replace(" ", "").split(',')
 		spotlightsAndStatus = []
-		for val in spotlights:
-			spotlightsAndStatus.append(val)
-			spotlightsAndStatus.append(redis.hget(val, 'status').decode('utf-8'))
+		for x in range(0, len(spotlights)):
+			spotlightsAndStatus.append(spotlights[x])
+			spotlightsAndStatus.append(redis.hget(str(x+1), 'status').decode('utf-8'))
 		if sha256.verify(data['password'], dataDecoded['password']):
 			return jsonify({'message': 'Hello {}'.format(data['username']), 'spotlightsAndStatus': spotlightsAndStatus}), 200
 		else:
@@ -84,5 +88,5 @@ def add_update():
 		return jsonify({'message': 'Saved!'})
 
 if __name__ == '__main__':
-    server.run(debug=True, port=5001)
-    # arduino.close()
+	server.run(debug=True, port=5000)
+	# arduino.close()
