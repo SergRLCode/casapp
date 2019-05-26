@@ -58,7 +58,11 @@ def spotlight_route(room):
 			redis.hmset(room, spotlightData)
 			instruction = "{}{}".format(room, data["status"])
 			# arduino.write(instruction.encode('utf-8'))
-		return jsonify(data, redis.hget(room, 'timeElapsed').decode('utf-8') if data["status"] == "off" else "")
+		objectToSend = {
+			"status": data['status'], 
+			"timeElapsed": redis.hget(room, 'timeElapsed').decode('utf-8') if data["status"] == "off" else ""
+		}
+		return jsonify(objectToSend)
 
 @server.route('/login', methods=['POST'])
 def login_user():
