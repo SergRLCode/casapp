@@ -9,18 +9,6 @@ server = Flask(__name__)
 # arduino = serial.Serial("/dev/ttyACM0", 9600)
 t.sleep(1)
 
-spotlightData = {
-	"status": "",
-	"hourStart": "",
-	"hourEnd": "",
-	"timeElapsed": ""
-}
-
-userData = {
-	"username": "",
-	"password": ""
-}
-
 def strTodate(theDate):
 	return dt.strptime(theDate, '%Y-%m-%d %H:%M:%S.%f')
 
@@ -39,6 +27,7 @@ def getTotalTimeSwitchedOn(spotlight):
 def spotlight_route(room):
 	if (request.method == 'POST'):
 		data = request.get_json()
+		spotlightData = {}
 		params = ('living_room', 'kitchen', 'bathroom', 'bedroom')
 		idents = ('1', '2', '3', '4')
 		for x in range(0,len(params)):
@@ -76,6 +65,8 @@ def login_user():
 			spotlightsAndStatus.append(spotlights[x])
 			spotlightsAndStatus.append(redis.hget(str(x+1), 'status').decode('utf-8'))
 		if sha256.verify(data['password'], dataDecoded['password']):
+			spotlightsAndStatus = str(spotlightsAndStatus).strip('[]')
+			spotlightsAndStatus = spotlightsAndStatus.replace("'", "").replace(" ", "")
 			return jsonify({'message': '{}'.format(data['username']), 'spotlightsAndStatus': spotlightsAndStatus}), 200
 		else:
 			return jsonify({'message': 'Wrong access'}), 401
@@ -83,6 +74,7 @@ def login_user():
 @server.route('/addUpdate', methods=['POST'])
 def add_update():
 	if(request.method == 'POST'):
+		userData = {}
 		data = request.get_json()
 		spotlights = data['spotlights']
 		data['spotlights'] = str(spotlights).strip('[]')
