@@ -78,6 +78,7 @@ def add_update():
 		data = request.get_json()
 		spotlights = data['spotlights']
 		data['spotlights'] = str(spotlights).strip('[]')
+		data['spotlights'] = data['spotlights'].replace("'", "").replace(" ", "")
 		for value in ('password', 'username', 'spotlights'):
 			userData[value] = data[value] if value!='password' else sha256.hash(data[value])
 		redis.hmset(data['username'], userData)
