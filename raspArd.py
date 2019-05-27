@@ -14,7 +14,7 @@ def strTodate(theDate):
 
 def getTotalTimeSwitchedOn(spotlight):
 	# hours, minutes, seconds = "", "", "" <- in case when all the variables will contain diferent value
-	hours = minutes = seconds = ""
+	hours = minutes = seconds = 0
 	_spotlight = redis.hgetall(spotlight)
 	_spotlight = {key.decode('utf-8'): value.decode('utf-8') for (key, value) in _spotlight.items()}
 	timeElapsed = (strTodate(_spotlight['hourEnd'])-strTodate(_spotlight['hourStart'])).seconds
@@ -61,12 +61,15 @@ def login_user():
 		dataDecoded = {key.decode('utf-8'): value.decode('utf-8') for (key, value) in user.items()}
 		spotlights = dataDecoded['spotlights'].replace(" ", "").split(',')
 		spotlightsAndStatus = []
+		params = ('living_room', 'kitchen', 'bathroom', 'bedroom')
+		idents = ('1', '2', '3', '4')
 		for x in range(0, len(spotlights)):
-			spotlightsAndStatus.append(spotlights[x])
-			spotlightsAndStatus.append(redis.hget(str(x+1), 'status').decode('utf-8'))
+			for y in range(0, len(params)):
+				if params[y]==spotlights[x]:
+					spotlightsAndStatus.append(spotlights[x])
+					spotlightsAndStatus.append(redis.hget(idents[y], 'status').decode('utf-8'))
 		if sha256.verify(data['password'], dataDecoded['password']):
-			spotlightsAndStatus = str(spotlightsAndStatus).strip('[]')
-			spotlightsAndStatus = spotlightsAndStatus.replace("'", "").replace(" ", "")
+			spotlightsAndStatus = str(spotlightsAndStatus).strip('[]').replace("'", "").replace(" ", "")
 			return jsonify({'message': '{}'.format(data['username']), 'spotlightsAndStatus': spotlightsAndStatus}), 200
 		else:
 			return jsonify({'message': 'Wrong access'}), 401
@@ -77,13 +80,12 @@ def add_update():
 		userData = {}
 		data = request.get_json()
 		spotlights = data['spotlights']
-		data['spotlights'] = str(spotlights).strip('[]')
-		data['spotlights'] = data['spotlights'].replace("'", "").replace(" ", "")
+		data['spotlights'] = str(spotlights).strip('[]').replace("'", "").replace(" ", "")
 		for value in ('password', 'username', 'spotlights'):
 			userData[value] = data[value] if value!='password' else sha256.hash(data[value])
 		redis.hmset(data['username'], userData)
 		return jsonify({'message': 'Saved!'})
 
 if __name__ == '__main__':
-	server.run(debug=True, port=5000)
+	server.run(debug=True, port=5000, host="192.168.43.194 ")
 	# arduino.close()
