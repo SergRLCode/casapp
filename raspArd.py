@@ -89,9 +89,6 @@ def add_update():
 @server.route('/turnOnAll', methods=['GET'])
 def turn_on_all():
 	arduino.write('1on'.encode('utf-8'))
-	arduino.write('2on'.encode('utf-8'))
-	arduino.write('3on'.encode('utf-8'))
-	arduino.write('4on'.encode('utf-8'))
 	return jsonify({'message': 'All turned on!'})
 
 @server.route('/turnOffAll', methods=['GET'])
