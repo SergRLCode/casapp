@@ -6,7 +6,7 @@ import redis
 
 redis = redis.Redis(host='localhost', port=6379)
 server = Flask(__name__)
-# arduino = serial.Serial("/dev/ttyACM0", 9600)
+arduino = serial.Serial("/dev/ttyACM0", 9600)
 t.sleep(1)
 
 def strTodate(theDate):
@@ -38,7 +38,7 @@ def spotlight_route(room):
 			spotlightData['hourStart'] = '{}'.format(dt.now())
 			redis.hmset(room, spotlightData)
 			instruction = "{}{}".format(room, data["status"])
-			# arduino.write(instruction.encode('utf-8'))
+			arduino.write(instruction.encode('utf-8'))
 		elif data["status"] == "off":
 			spotlightData['status'] = 'off'
 			spotlightData['hourEnd'] = '{}'.format(dt.now())
@@ -46,7 +46,7 @@ def spotlight_route(room):
 			spotlightData['timeElapsed'] = getTotalTimeSwitchedOn(room)
 			redis.hmset(room, spotlightData)
 			instruction = "{}{}".format(room, data["status"])
-			# arduino.write(instruction.encode('utf-8'))
+			arduino.write(instruction.encode('utf-8'))
 		objectToSend = {
 			"status": data['status'], 
 			"timeElapsed": redis.hget(room, 'timeElapsed').decode('utf-8') if data["status"] == "off" else ""
@@ -86,6 +86,22 @@ def add_update():
 		redis.hmset(data['username'], userData)
 		return jsonify({'message': 'Saved!'})
 
+@server.route('/turnOnAll', methods=['GET'])
+def turn_on_all():
+	arduino.write('1on'.encode('utf-8'))
+	arduino.write('2on'.encode('utf-8'))
+	arduino.write('3on'.encode('utf-8'))
+	arduino.write('4on'.encode('utf-8'))
+	return jsonify({'message': 'All turned on!'})
+
+@server.route('/turnOffAll', methods=['GET'])
+def turn_off_all():
+	arduino.write('1off'.encode('utf-8'))
+	arduino.write('2off'.encode('utf-8'))
+	arduino.write('3off'.encode('utf-8'))
+	arduino.write('4off'.encode('utf-8'))
+	return jsonify({'message': 'All turned off!'})
+
 if __name__ == '__main__':
-	server.run(debug=True, port=5000, host="192.168.43.194 ")
-	# arduino.close()
+	server.run(debug=True, port=5000, host="192.168.1.65")
+	arduino.close()
