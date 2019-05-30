@@ -86,30 +86,6 @@ def add_update():
 		redis.hmset(data['username'], userData)
 		return jsonify({'message': 'Saved!'})
 
-@server.route('/turnOnAll', methods=['GET'])
-def turn_on_all():
-	arduino.write('1on'.encode('utf-8'))
-	t.sleep(1)
-	arduino.write('2on'.encode('utf-8'))
-	t.sleep(1)
-	arduino.write('3on'.encode('utf-8'))
-	t.sleep(1)
-	arduino.write('4on'.encode('utf-8'))
-	t.sleep(1)
-	return jsonify({'message': 'All turned on!'})
-
-@server.route('/turnOffAll', methods=['GET'])
-def turn_off_all():
-	arduino.write('1off'.encode('utf-8'))
-	t.sleep(1)
-	arduino.write('2off'.encode('utf-8'))
-	t.sleep(1)
-	arduino.write('3off'.encode('utf-8'))
-	t.sleep(1)
-	arduino.write('4off'.encode('utf-8'))
-	t.sleep(1)
-	return jsonify({'message': 'All turned off!'})
-
 if __name__ == '__main__':
 	server.run(debug=True, port=5000, host="192.168.1.65")
 	arduino.close()
