@@ -101,9 +101,13 @@ def turn_on_all():
 @server.route('/turnOffAll', methods=['GET'])
 def turn_off_all():
 	arduino.write('1off'.encode('utf-8'))
+	t.sleep(1)
 	arduino.write('2off'.encode('utf-8'))
+	t.sleep(1)
 	arduino.write('3off'.encode('utf-8'))
+	t.sleep(1)
 	arduino.write('4off'.encode('utf-8'))
+	t.sleep(1)
 	return jsonify({'message': 'All turned off!'})
 
 if __name__ == '__main__':
